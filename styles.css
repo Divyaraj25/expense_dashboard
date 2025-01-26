@@ -9,6 +9,19 @@ body {
   backdrop-filter: blur(10px);
 }
 
+#monthly-report {
+  margin-bottom: 20px;
+  display: none;
+}
+
+#monthly-report-chart {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
 .download-button {
   margin-bottom: 20px;
   text-align: center;

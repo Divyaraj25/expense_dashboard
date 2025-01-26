@@ -279,6 +279,14 @@ function populateFilters(data) {
     keywordSet.forEach(keyword => {
         keywordFilter.innerHTML += `<option value="${keyword}">${keyword}</option>`;
     });
+
+    const moneyTypeSet = new Set(data.map(item => item['Money Type']));
+    const moneyTypeFilter = document.getElementById('money-type-filter');
+    moneyTypeFilter.innerHTML = '<option value="">All</option>';
+    moneyTypeSet.forEach(moneyType => {
+        const optionValue = moneyType === 0 ? 'Cash' : 'Online';
+        moneyTypeFilter.innerHTML += `<option value="${moneyType}">${optionValue}</option>`;
+    });
 }
 
 // apply filters when "Apply Filters" button is clicked
@@ -288,12 +296,16 @@ document.getElementById('apply-filters').addEventListener('click', () => {
     const endDate = document.getElementById('end-date').value;
     const minMoney = document.getElementById('min-money').value;
     const maxMoney = document.getElementById('max-money').value;
-    const filteredData = filterData(keywordFilter, startDate, endDate, minMoney, maxMoney);
+    const moneyTypeFilter = document.getElementById('money-type-filter').value;
+    console.log(typeof moneyTypeFilter)
+    console.log(moneyTypeFilter)
+    const filteredData = filterData(keywordFilter, startDate, endDate, minMoney, maxMoney, moneyTypeFilter);
     generateDashboard(filteredData);
+    document.getElementById('monthly-report').style.display = 'none';
 });
 
 // filterData function
-function filterData(keywordFilter, startDate, endDate, minMoney, maxMoney) {
+function filterData(keywordFilter, startDate, endDate, minMoney, maxMoney, moneyTypeFilter) {
     const filteredData = globalData.filter(item => {
         const date = new Date(item['Date']);
         return (
@@ -301,7 +313,8 @@ function filterData(keywordFilter, startDate, endDate, minMoney, maxMoney) {
             (!startDate || date >= new Date(startDate)) &&
             (!endDate || date <= new Date(endDate)) &&
             (!minMoney || safeParseFloat(item['Money']) >= minMoney) &&
-            (!maxMoney || safeParseFloat(item['Money']) <= maxMoney)
+            (!maxMoney || safeParseFloat(item['Money']) <= maxMoney) &&
+            (!moneyTypeFilter || parseInt(item['Money Type'], 10) === parseInt(moneyTypeFilter, 10)) // i am getting this value as string, i want integer
         );
     });
     return filteredData;
@@ -319,10 +332,20 @@ function clearFilters() {
     document.getElementById('end-date').value = '';
     document.getElementById('min-money').value = '';
     document.getElementById('max-money').value = '';
+    document.getElementById('money-type-filter').value = '';
+    showDashboard();
     generateDashboard(globalData);
 }
 
+function showDashboard() {
+    const charts = document.querySelectorAll('.chart');
+    charts.forEach(chart => chart.innerHTML = '');
+    document.getElementById('description-section').innerHTML = '';
+    document.getElementById('monthly-report').style.display = 'block';
+}
+
 function generateDashboard(data) {
+    console.log(data)
     if (!data.length) {
         alert('No data available for the selected filters.');
         clearDashboard();
@@ -335,6 +358,75 @@ function generateDashboard(data) {
     updateCashFlow(data);
     updateTransactionByPlace(data);
     updateDescriptionSection(data);
+    updateMonthlyReport(data);
+}
+
+function updateMonthlyReport(data) {
+    console.log(data)
+    // Show the monthly report div
+    document.getElementById('monthly-report').style.display = 'block';
+    const monthlyReportChart = document.getElementById('monthly-report-chart');
+    const monthlyReportData = getMonthlyReportData(data);
+    console.log(monthlyReportData)
+    const monthlyReportChartConfig = {
+        data: [
+            {
+                x: monthlyReportData.map(item => item.month),
+                y: monthlyReportData.map(item => item.totalIncome),
+                type: 'bar',
+                name: 'Total Income'
+            },
+            {
+                x: monthlyReportData.map(item => item.month),
+                y: monthlyReportData.map(item => item.totalExpense),
+                type: 'bar',
+                name: 'Total Expense'
+            }
+        ],
+        layout: {
+            title: 'Monthly Report',
+            xaxis: { title: 'Month' },
+            yaxis: { title: 'Amount' },
+            barmode: 'group'
+        }
+    };
+    Plotly.newPlot(monthlyReportChart, monthlyReportChartConfig);
+}
+
+// New function to get monthly report data
+function getMonthlyReportData(data) {
+    const monthlyReportData = [];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    for (let i = 0; i < months.length; i++) {
+        const monthData = data.filter(item => {
+            const dateParts = item['Date'].split('-');
+            const date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+            return date.getMonth() === i;
+        });
+
+        const totalIncome = monthData.reduce((acc, item) => {
+            if (item['Get/Spend Type'] === "0") {
+                return acc + safeParseFloat(item['Money']);
+            } else {
+                return acc;
+            }
+        }, 0);
+
+        const totalExpense = monthData.reduce((acc, item) => {
+            if (item['Get/Spend Type'] === "1") {
+                return acc + safeParseFloat(item['Money']);
+            } else {
+                return acc;
+            }
+        }, 0);
+
+        monthlyReportData.push({
+            month: months[i],
+            totalIncome: totalIncome,
+            totalExpense: totalExpense
+        });
+    }
+    return monthlyReportData;
 }
 
 function updateBalanceOverview(data) {
@@ -484,4 +576,5 @@ function clearDashboard() {
         document.getElementById(id).innerHTML = '<p class="placeholder">No data available.</p>';
     });
     document.getElementById('description-section').innerHTML = '<p class="placeholder">No descriptions available.</p>';
+    document.getElementById('monthly-report').style.display = 'none';
 }

@@ -28,6 +28,10 @@
       <select id="keyword-filter"></select>
       <br />
 
+      <label for="money-type-filter">Filter by Money Type:</label>
+      <select id="money-type-filter"></select>
+      <br />
+
       <label for="date-filter">Filter by Date:</label>
       <input type="date" id="start-date" /> to
       <input type="date" id="end-date" />
@@ -40,6 +44,9 @@
 
       <button id="apply-filters">Apply Filters</button>
       <button id="clear-filters">Clear Filters</button>
+    </div>
+    <div id="monthly-report">
+      <div id="monthly-report-chart" class="chart"></div>
     </div>
     <div class="dashboard" id="dashboard">
       <div id="balance-overview" class="chart"></div>
