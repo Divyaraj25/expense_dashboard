@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Financial Tracking Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <script defer src="financial_dashboard.js"></script>
+  </head>
+  <body>
+    <h1>Interactive Financial Tracking Dashboard</h1>
+    <div class="download-button">
+      <a
+        href="#"
+        id="download-sample"
+        download="sample.csv"
+        class="download-button"
+        >Download Sample CSV Format</a
+      >
+    </div>
+    <div class="upload-area" id="upload-area">
+      Drag and Drop CSV File Here or Click to Upload
+    </div>
+    <input type="file" id="upload" accept=".csv" style="display: none" />
+    <div class="filters" id="filters">
+      <label for="keyword-filter">Filter by Unique Keyword:</label>
+      <select id="keyword-filter"></select>
+      <br />
+
+      <label for="date-filter">Filter by Date:</label>
+      <input type="date" id="start-date" /> to
+      <input type="date" id="end-date" />
+      <br />
+
+      <label for="money-filter">Filter by Money:</label>
+      <input type="number" id="min-money" placeholder="Min" /> to
+      <input type="number" id="max-money" placeholder="Max" />
+      <br />
+
+      <button id="apply-filters">Apply Filters</button>
+      <button id="clear-filters">Clear Filters</button>
+    </div>
+    <div class="dashboard" id="dashboard">
+      <div id="balance-overview" class="chart"></div>
+      <div id="income-expense-trends" class="chart"></div>
+      <div id="spending-by-category" class="chart"></div>
+      <div id="cash-flow" class="chart"></div>
+      <div id="transaction-by-place" class="chart"></div>
+      <div id="description-section" class="description-section"></div>
+    </div>
+  </body>
+</html>
