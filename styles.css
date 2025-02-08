@@ -50,6 +50,14 @@ body {
   margin-bottom: 20px;
 }
 
+.filter-title {
+  text-align: center;
+}
+
+.same-margin {
+  margin-bottom: 5px;
+}
+
 .filters {
   display: none;
   margin-bottom: 20px;

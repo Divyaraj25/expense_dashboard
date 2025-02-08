@@ -29,7 +29,7 @@ uploadInput.addEventListener('change', (event) => {
 document.getElementById('download-sample').addEventListener('click', () => {
     const sampleData = [
         ['Date', 'Day', 'Time', 'Unique Keyword', 'Get/Spend Type', 'Money', 'Description', 'Money Type', 'Place', 'Remaining Money in Cash', 'Remaining Money in Online', 'Whole Total'],
-        ['05-01-2025', 'Sunday', '11:00 PM', 'elluminati', '0', '? 5000.00', 'Elluminati stipend', '1', 'home', '? 400.00', '? 5900.38', '? 6300.38']
+        ['05-01-2025', 'Sunday', '11:00 PM', 'elluminati', '0', '5000.00', 'Elluminati stipend', '1', 'home', '400.00', '5900.38', '6300.38']
     ];
     const csvContent = sampleData.map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -37,8 +37,24 @@ document.getElementById('download-sample').addEventListener('click', () => {
     document.getElementById('download-sample').href = url;
 });
 
+/**
+ * Processes a file containing CSV data and updates the dashboard with the data.
+ * First, it reads the file using the FileReader API and converts the data to JSON.
+ * Then, it checks if the data is in the correct format and if not, alerts the user.
+ * If the data is valid, it updates the global data object and shows the dashboard.
+ * Finally, it calls getTotalReport, populateFilters, and generateDashboard to update the charts.
+ * @param {File} file - The file containing the CSV data to process.
+ */
 function processFile(file) {
     const reader = new FileReader();
+    /**
+     * Handles the onload event of the FileReader API to read the CSV data from the file.
+     * Converts the CSV data to JSON using the convertCSVToJSON function and updates the
+     * global data object with the JSON data. If the data is invalid, it alerts the user.
+     * If the data is valid, it shows the dashboard and calls getTotalReport,
+     * populateFilters, and generateDashboard to update the charts.
+     * @param {Event} e - The event object containing the result of the file read.
+     */
     reader.onload = async function (e) {
         try {
             const csvData = e.target.result;
@@ -52,6 +68,8 @@ function processFile(file) {
             globalData = jsonData;
             document.getElementById('dashboard').style.display = 'grid';
             document.getElementById('filters').style.display = 'block';
+            document.getElementById('total-report').style.display = 'block';
+            getTotalReport(jsonData);
             populateFilters(jsonData);
             generateDashboard(jsonData);
         } catch (error) {
@@ -61,6 +79,31 @@ function processFile(file) {
     };
     reader.readAsText(file);
 }
+
+/**
+ * Updates the total report section of the dashboard with the
+ * remaining money in cash and online from the last transaction
+ * in the given data.
+ *
+ * @param {Array<Object>} data - The array of transaction records
+ * to get the last transaction from.
+ */
+function getTotalReport(data) {
+    const lastTransaction = data[data.length - 1];
+    document.getElementById('total-in-cash').textContent = `₹ ${lastTransaction['Remaining Money in Cash'].toFixed(2)}`;
+    document.getElementById('total-in-online').textContent = `₹ ${lastTransaction['Remaining Money in Online'].toFixed(2)}`;
+}
+
+/**
+ * Converts a CSV string into an array of objects, where each object's keys
+ * are the headers from the CSV and the values are the corresponding values
+ * from the CSV. It removes any empty lines and handles special cleaning
+ * for currency columns by removing extraneous characters and parsing
+ * them as floats. It also removes any columns with the header 'Tick mark'.
+ *
+ * @param {String} csv - The CSV string to convert.
+ * @returns {Array<Object>} - An array of objects representing the CSV data.
+ */
 
 function convertCSVToJSON(csv) {
     const csvData = csv;
@@ -95,52 +138,15 @@ function convertCSVToJSON(csv) {
     return result;
 }
 
-function convertCSVToJSON2() {
-    const fileInput = document.getElementById('csvFile');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('Please upload a CSV file first.');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const csvData = e.target.result;
-        const lines = csvData.split('\n');
-        const headers = lines[0].split(',');
-
-        const result = lines.slice(1).map(line => {
-            const values = line.split(',');
-
-            // Clean up currency values and format properly
-            const cleanMoney = (value) => {
-                return parseFloat(value.replace(/[^\d.-]/g, '').replace(',', '')) || 0;
-            };
-
-            const obj = headers.reduce((acc, header, index) => {
-                let value = values[index]?.trim() || '';
-
-                // Special cleaning for currency columns like 'Money', 'Remaining Money', 'Whole Total'
-                if (header.toLowerCase().includes('money') || header.toLowerCase().includes('total')) {
-                    value = cleanMoney(value);
-                }
-
-                acc[header.trim()] = value;
-                return acc;
-            }, {});
-
-            return obj;
-        });
-
-        const jsonResult = JSON.stringify(result, null, 4);
-        displayJSON(jsonResult);
-    };
-
-    reader.readAsText(file);
-}
-
-// this function convert csv to json and return json
+/**
+ * This function takes a CSV string and returns a Promise that resolves to an
+ * array of objects. Each object's keys are the headers from the CSV, and each
+ * object's values are the corresponding values from the CSV, cleaned up (e.g.
+ * currency values are converted to floats, and extraneous characters are removed).
+ *
+ * @param {String} csv - the CSV string to convert
+ * @returns {Promise<Array<Object>>} - a Promise that resolves to an array of objects
+ */
 async function convertCSVToJSON3(csv) {
     return new Promise((resolve, reject) => {
         try {
@@ -166,7 +172,14 @@ async function convertCSVToJSON3(csv) {
     });
 }
 
-// this function convert csv to json and return json
+/**
+ * This function takes a CSV string and returns a Promise that resolves to an
+ * array of objects. Each object's keys are the headers from the CSV, and each
+ * object's values are the corresponding values from the CSV, cleaned up (e.g.
+ * currency values are converted to floats, and extraneous characters are removed).
+ *
+ * @param {String} csv - the CSV string to convert
+ */
 async function convertCSVToJSON4(csv) {
     return new Promise((resolve, reject) => {
         try {
@@ -192,26 +205,18 @@ async function convertCSVToJSON4(csv) {
     });
 }
 
-// this function convert csv to json and return json
+/**
+ * This function takes a CSV string and returns a Promise that resolves to an
+ * array of objects. Each object's keys are the headers from the CSV, and each
+ * object's values are the corresponding values from the CSV, cleaned up (e.g.
+ * currency values are converted to floats, and extraneous characters are removed).
+ *
+ * @param {String} csv - the CSV string to convert
+ * @returns {Promise<Array<Object>>} - a Promise that resolves to an array of objects
+ */
 async function convertCSVToJSON5(csv) {
     return new Promise((resolve, reject) => {
         try {
-            console.log(csv)
-
-            // /*************  ✨ Codeium Command 🌟  *************/
-            // i am getting this type of csv data, adjust it in converting to json
-            // Date,Day,Time,Unique Keyword,Get/Spend Type,Money,Description,Money Type,Place,Remaining Money in Cash,Remaining Money in Online,Whole Total
-            // 05-01-2025,Sunday,11:00 PM,elluminati,0,"? 5,000.00",Elluminati stipend,1,home,? 400.00,"? 5,900.38","? 6,300.38"
-            // 06-01-2025,Monday,7:30 PM,binance,0,? 704.08,Binance withdraw,1,home,? 400.00,"? 6,604.46","? 7,004.46"
-            // 06-01-2025,Monday,7:30 PM,anonymous,0,? 40.00,Ankit given to me for bike taken,1,home,? 400.00,"? 6,644.46","? 7,044.46"
-            // 07-01-2025,Tuesday,7:30 PM,binance,0,? 519.48,Binance withdraw,1,home,? 400.00,"? 7,163.94","? 7,563.94"
-            // 14-01-2025,Tuesday,11:00 AM,anonymous,0,? 100.00,given by baa,0,home,? 500.00,"? 7,163.94","? 7,663.94"
-            // 16-01-2025,Thursday,9:00 PM,miraj spend,1,? 800.00,"given to miraj, for their usage, for proof, see instagram chat with miraj",1,home,? 500.00,"? 6,363.94","? 6,863.94"
-            // 18-01-2025,Saturday,11:30 AM,anonymous,0,? 700.00,"taken my rupees that I have given to bhargav's friend, for proof, see whatsapp chat with bhargav",1,home,? 500.00,"? 7,063.94","? 7,563.94"
-            // 19-01-2025,Sunday,3:50 PM,course,1,? 942.40,"taken python course with AI, from aifortechies startup, proof is in email account -9425",1,home,? 500.00,"? 6,121.54","? 6,621.54"
-            // 20-01-2025,Monday,7:48 PM,yugansh,1,? 220.00,"yugansh profit from binance, actually my loss",1,home,? 500.00,"? 5,901.54","? 6,401.54"
-            // 22-01-2025,Wednesday,8:45 AM,pulsur petrol,1,? 100.00,"pulsur petrol fill, because it is in reserve and I forgot to tell about petrol is over to father",0,madhapar chawk,? 400.00,"? 6,121.54","? 6,521.54"
-            // take reference from convertCSVToJSON2 function
             const lines = csv.split('\n');
             const headers = lines[0].split(',').map(header => header.trim());
             const result = lines.slice(1).map(line => {
@@ -227,67 +232,22 @@ async function convertCSVToJSON5(csv) {
                 }, {});
                 return obj;
             });
-            console.log(result)
             resolve(result);
         } catch (error) {
             reject(error);
         }
     });
-    // /******  ab70155d-f724-4d43-88df-f13b5837233c  *******/
 }
 
-// Clean up currency values and format properly
+/**
+ * Clean up a string containing a currency value by removing any non-numeric
+ * characters and commas, and return the result as a float.
+ * @param {string} value - The string to clean up.
+ * @returns {number} The cleaned up value as a float, or 0 if the result is NaN.
+ */
 function cleanMoney(value) {
     return parseFloat(value.replace(/[^\d.-]/g, '').replace(',', '')) || 0;
 };
-
-// function convertCSVToJSON() {
-//     const fileInput = document.getElementById('csvFile');
-//     const file = fileInput.files[0];
-
-//     if (!file) {
-//         alert('Please upload a CSV file first.');
-//         return;
-//     }
-
-//     const reader = new FileReader();
-//     reader.onload = function (e) {
-//         const csvData = e.target.result;
-//         const lines = csvData.split('\n');
-//         const headers = lines[0].split(',');
-
-//         const result = lines.slice(1).map(line => {
-//             const values = line.split(',');
-//             const obj = headers.reduce((acc, header, index) => {
-//                 acc[header.trim()] = values[index]?.trim() || '';
-//                 return acc;
-//             }, {});
-//             return obj;
-//         });
-
-//         const jsonResult = JSON.stringify(result, null, 4);
-//         displayJSON(jsonResult);
-//     };
-
-//     reader.readAsText(file);
-// }
-
-function populateFilters(data) {
-    const keywordSet = new Set(data.map(item => item['Unique Keyword']));
-    const keywordFilter = document.getElementById('keyword-filter');
-    keywordFilter.innerHTML = '<option value="">All</option>';
-    keywordSet.forEach(keyword => {
-        keywordFilter.innerHTML += `<option value="${keyword}">${keyword}</option>`;
-    });
-
-    const moneyTypeSet = new Set(data.map(item => item['Money Type']));
-    const moneyTypeFilter = document.getElementById('money-type-filter');
-    moneyTypeFilter.innerHTML = '<option value="">All</option>';
-    moneyTypeSet.forEach(moneyType => {
-        const optionValue = moneyType === 0 ? 'Cash' : 'Online';
-        moneyTypeFilter.innerHTML += `<option value="${moneyType}">${optionValue}</option>`;
-    });
-}
 
 // apply filters when "Apply Filters" button is clicked
 document.getElementById('apply-filters').addEventListener('click', () => {
@@ -304,28 +264,15 @@ document.getElementById('apply-filters').addEventListener('click', () => {
     document.getElementById('monthly-report').style.display = 'none';
 });
 
-// filterData function
-function filterData(keywordFilter, startDate, endDate, minMoney, maxMoney, moneyTypeFilter) {
-    const filteredData = globalData.filter(item => {
-        const date = new Date(item['Date']);
-        return (
-            (!keywordFilter || item['Unique Keyword'] === keywordFilter) &&
-            (!startDate || date >= new Date(startDate)) &&
-            (!endDate || date <= new Date(endDate)) &&
-            (!minMoney || safeParseFloat(item['Money']) >= minMoney) &&
-            (!maxMoney || safeParseFloat(item['Money']) <= maxMoney) &&
-            (!moneyTypeFilter || parseInt(item['Money Type'], 10) === parseInt(moneyTypeFilter, 10)) // i am getting this value as string, i want integer
-        );
-    });
-    return filteredData;
-}
-
 // clear-filter button
 document.getElementById('clear-filters').addEventListener('click', () => {
     clearFilters();
 });
 
-// clear filters functon
+/**
+ * Clears all the filters and resets the dashboard to its original state.
+ * Used when clearing filters or loading a new CSV file.
+ */
 function clearFilters() {
     document.getElementById('keyword-filter').value = '';
     document.getElementById('start-date').value = '';
@@ -337,6 +284,10 @@ function clearFilters() {
     generateDashboard(globalData);
 }
 
+/**
+ * Clears all charts and resets the dashboard to its original state.
+ * Used when clearing filters or loading a new CSV file.
+ */
 function showDashboard() {
     const charts = document.querySelectorAll('.chart');
     charts.forEach(chart => chart.innerHTML = '');
@@ -344,22 +295,13 @@ function showDashboard() {
     document.getElementById('monthly-report').style.display = 'block';
 }
 
-function generateDashboard(data) {
-    console.log(data)
-    if (!data.length) {
-        alert('No data available for the selected filters.');
-        clearDashboard();
-        return;
-    }
-
-    updateBalanceOverview(data);
-    updateIncomeExpenseTrends(data);
-    updateSpendingByCategory(data);
-    updateCashFlow(data);
-    updateTransactionByPlace(data);
-    updateDescriptionSection(data);
-    updateMonthlyReport(data);
-}
+/**
+ * Updates the monthly report chart with the given transaction data.
+ * Displays the 'monthly-report' div and uses Plotly to generate a grouped bar chart 
+ * showing total income and total expense for each month.
+ *
+ * @param {Array} data - The array of transaction records used to calculate monthly totals.
+ */
 
 function updateMonthlyReport(data) {
     console.log(data)
@@ -393,7 +335,13 @@ function updateMonthlyReport(data) {
     Plotly.newPlot(monthlyReportChart, monthlyReportChartConfig);
 }
 
-// New function to get monthly report data
+/**
+ * @function getMonthlyReportData
+ * @description This function takes in a array of transactions and returns an array of objects,
+ *              where each object contains the total income and total expense for each month.
+ * @param {Array} data - The array of transactions.
+ * @returns {Array} - An array of objects, where each object contains the total income and total expense for each month.
+ */
 function getMonthlyReportData(data) {
     const monthlyReportData = [];
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -429,9 +377,20 @@ function getMonthlyReportData(data) {
     return monthlyReportData;
 }
 
+/**
+ * Updates the Balance Overview chart with the latest data.
+ * The chart displays the distribution of remaining money in cash and online
+ * as a pie chart. If the data is empty, the function returns immediately.
+ *
+ * @param {array} data - The data to update the chart with, which should include
+ *     the latest 'Remaining Money in Cash' and 'Remaining Money in Online' values.
+ */
+
 function updateBalanceOverview(data) {
-    const balanceCash = safeParseFloat(data[data.length - 1]?.['Remaining Money in Cash'] || 0);
-    const balanceOnline = safeParseFloat(data[data.length - 1]?.['Remaining Money in Online'] || 0);
+    if (data.length === 0) return;
+
+    const balanceCash = safeParseFloat(data[data.length - 1]['Remaining Money in Cash']);
+    const balanceOnline = safeParseFloat(data[data.length - 1]['Remaining Money in Online']);
 
     Plotly.newPlot('balance-overview', [{
         type: 'pie',
@@ -444,6 +403,11 @@ function updateBalanceOverview(data) {
     });
 }
 
+/**
+ * Updates the income vs expense trends bar chart with the given data.
+ *
+ * @param {array} data - The filtered data to generate the trends from.
+ */
 function updateIncomeExpenseTrends(data) {
     const incomeData = data.filter(item => item['Get/Spend Type'] === "0");
     const expenseData = data.filter(item => item['Get/Spend Type'] === "1");
@@ -455,7 +419,7 @@ function updateIncomeExpenseTrends(data) {
             type: 'bar',
             name: 'Income',
             hoverinfo: 'x+y+text',
-            hovertext: incomeData.map(item => item['Description'])
+            hovertext: incomeData.map(item => `${item['Description']} (${item['Unique Keyword']})`)
         },
         {
             x: expenseData.map(item => item['Date']),
@@ -463,7 +427,7 @@ function updateIncomeExpenseTrends(data) {
             type: 'bar',
             name: 'Expense',
             hoverinfo: 'x+y+text',
-            hovertext: expenseData.map(item => item['Description'])
+            hovertext: expenseData.map(item => `${item['Description']} (${item['Unique Keyword']})`)
         }
     ], {
         title: 'Income vs Expense Trends',
@@ -473,21 +437,107 @@ function updateIncomeExpenseTrends(data) {
     });
 }
 
+/**
+ * Updates the Spending by Category chart based on the given data.
+ * If the 'others' filter is selected, it filters the original data for transactions < 500.
+ * Otherwise, it processes the data as is.
+ * It groups the data by Unique Keyword and calculates total money for each.
+ * It then calculates total money for percentage calculation and processes categories
+ * based on percentage threshold (grouping categories less than 5% into "others").
+ * It sorts the categories by value in descending order and removes categories with zero value.
+ * It then updates the chart with the processed data and percentages for hover text.
+ * The chart title is determined based on the filter.
+ * @param {array} data - The filtered data to generate the chart from.
+ */
 function updateSpendingByCategory(data) {
-    const moneyValues = data.map(item => safeParseFloat(item['Money']));
-    const uniqueKeywords = data.map(item => item['Unique Keyword']);
+    const keywordFilter = document.getElementById('keyword-filter').value;
+
+    // If others filter is selected, we need to process the original data
+    let categoriesData;
+    if (keywordFilter === 'others') {
+        // Filter original data for transactions < 500
+        categoriesData = globalData.filter(item => {
+            const money = safeParseFloat(item['Money']);
+            return money < 500;
+        });
+    } else {
+        categoriesData = data;
+    }
+
+    // Group data by Unique Keyword and calculate total money for each
+    const categoryTotals = categoriesData.reduce((acc, item) => {
+        const keyword = item['Unique Keyword'];
+        const money = safeParseFloat(item['Money']);
+        acc[keyword] = (acc[keyword] || 0) + money;
+        return acc;
+    }, {});
+
+    // Calculate total money for percentage calculation
+    const totalMoney = Object.values(categoryTotals).reduce((sum, value) => sum + value, 0);
+
+    // Process categories based on percentage threshold only if not in others filter
+    let processedCategories;
+    if (keywordFilter === 'others') {
+        processedCategories = categoryTotals; // Use all categories as is for others filter
+    } else {
+        // Group categories less than 5% into "others"
+        processedCategories = Object.entries(categoryTotals).reduce((acc, [keyword, money]) => {
+            const percentage = (money / totalMoney) * 100;
+            if (percentage < 5) {
+                acc['others (< 5%)'] = (acc['others (< 5%)'] || 0) + money;
+            } else {
+                acc[keyword] = money;
+            }
+            return acc;
+        }, {});
+    }
+
+    // Sort categories by value in descending order
+    const sortedEntries = Object.entries(processedCategories)
+        .sort(([, a], [, b]) => b - a)
+        .filter(([, value]) => value > 0); // Remove categories with zero value
+
+    // Separate labels and values
+    const labels = sortedEntries.map(([keyword]) => keyword);
+    const values = sortedEntries.map(([, value]) => value);
+
+    // Calculate percentages for hover text
+    const percentages = values.map(value => ((value / totalMoney) * 100).toFixed(1));
+    const hovertext = labels.map((label, i) =>
+        `${label}<br>₹${values[i].toFixed(2)}<br>${percentages[i]}%`
+    );
+
+    // Determine chart title based on filter
+    const chartTitle = keywordFilter === 'others'
+        ? 'Category Distribution for Transactions < ₹500'
+        : 'Spending by Category (Categories < 5% grouped as Others)';
 
     Plotly.newPlot('spending-by-category', [{
         type: 'pie',
-        values: moneyValues,
-        labels: uniqueKeywords,
-        textinfo: 'label+percent'
+        values: values,
+        labels: labels,
+        textinfo: 'label+percent',
+        hoverinfo: 'text',
+        hovertext: hovertext,
+        textposition: 'outside'
     }], {
-        title: 'Spending by Unique Keyword'
+        title: chartTitle,
+        showlegend: true,
+        legend: {
+            orientation: 'h',
+            y: -0.2
+        }
     });
 }
 
+/**
+ * Updates the Cash Flow Over Time chart with the provided data.
+ * The chart displays the total balance over time.
+ * @param {array} data - The data to update the chart with.
+ */
 function updateCashFlow(data) {
+    if (data.length === 0) return;
+
     const dates = data.map(item => item['Date']);
     const totals = data.map(item => safeParseFloat(item['Whole Total']));
 
@@ -504,12 +554,18 @@ function updateCashFlow(data) {
     });
 }
 
+/**
+ * Updates the Transaction Volume by Place chart with the provided data.
+ * The chart displays the count of transactions at each place.
+ * @param {array} data - The data to update the chart with.
+ */
 function updateTransactionByPlace(data) {
-    const places = data.map(item => item['Place']);
-    const placeCounts = {};
-    places.forEach(place => {
-        placeCounts[place] = (placeCounts[place] || 0) + 1;
-    });
+    // Group transactions by place
+    const placeCounts = data.reduce((acc, item) => {
+        const place = item['Place'];
+        acc[place] = (acc[place] || 0) + 1;
+        return acc;
+    }, {});
 
     Plotly.newPlot('transaction-by-place', [{
         x: Object.keys(placeCounts),
@@ -523,6 +579,168 @@ function updateTransactionByPlace(data) {
     });
 }
 
+/**
+ * Safely parses a value as a float, replacing any commas, whitespace, or question marks 
+ * with nothing, and returning 0 if the result is NaN.
+ * @param {string|number} value - The value to parse.
+ * @returns {number} The parsed float value, or 0 if the result is NaN.
+ */
+function safeParseFloat(value) {
+    if (typeof value === 'string') {
+        return parseFloat(value.replace(/[?\s,]/g, '')) || 0;
+    }
+    return parseFloat(value) || 0;
+}
+
+/**
+ * Clears all the charts in the dashboard and replaces them with a placeholder.
+ * This function is used to clear the dashboard when the filters are cleared.
+ */
+function clearDashboard() {
+    const chartIds = [
+        'balance-overview',
+        'income-expense-trends',
+        'spending-by-category',
+        'cash-flow',
+        'transaction-by-place',
+    ];
+    chartIds.forEach(id => {
+        Plotly.purge(id);
+        document.getElementById(id).innerHTML = '<p class="placeholder">No data available.</p>';
+    });
+    document.getElementById('description-section').innerHTML = '<p class="placeholder">No descriptions available.</p>';
+    document.getElementById('monthly-report').style.display = 'none';
+}
+
+/**
+ * Populate the filters in the dashboard with the available options based on the data provided.
+ * This includes populating the Unique Keyword filter with all the unique keywords in the data,
+ * and populating the Money Type filter with the available money types (0 for Cash, 1 for Online).
+ * @param {array} data - The array of transaction data to populate the filters from.
+ */
+function populateFilters(data) {
+    const processedData = processOthersCategory(data);
+    const keywordSet = new Set(processedData.map(item => item['Unique Keyword']));
+    const keywordFilter = document.getElementById('keyword-filter');
+    keywordFilter.innerHTML = '<option value="">All</option>';
+    keywordSet.forEach(keyword => {
+        keywordFilter.innerHTML += `<option value="${keyword}">${keyword}</option>`;
+    });
+
+    const moneyTypeSet = new Set(processedData.map(item => item['Money Type']));
+    const moneyTypeFilter = document.getElementById('money-type-filter');
+    moneyTypeFilter.innerHTML = '<option value="">All</option>';
+    moneyTypeSet.forEach(moneyType => {
+        const optionValue = moneyType === 0 ? 'Cash' : 'Online';
+        moneyTypeFilter.innerHTML += `<option value="${moneyType}">${optionValue}</option>`;
+    });
+}
+
+/**
+ * Processes the data to group all transactions with money < 500 into
+ * the "others" category.
+ *
+ * @param {array} data - The filtered data to process.
+ * @returns {array} A new array with the processed data.
+ */
+function processOthersCategory(data) {
+    // Create a deep copy of the data to avoid modifying the original
+    return data.map(item => {
+        const money = parseFloat(item['Money'].toString().replace(/[^\d.-]/g, '')) || 0;
+        if (money < 500) {
+            return {
+                ...item,
+                'Unique Keyword': 'others'
+            };
+        }
+        return { ...item };  // Return a copy of the item
+    });
+}
+
+/**
+ * Filters the provided data based on the specified filters.
+ * If the keyword filter is set to 'others', it will be processed differently.
+ * @param {string} keywordFilter - The keyword to filter by, or 'others' to filter by transactions < 500.
+ * @param {string} startDate - The start date to filter by in the format 'dd-mm-yyyy'.
+ * @param {string} endDate - The end date to filter by in the format 'dd-mm-yyyy'.
+ * @param {number} minMoney - The minimum money to filter by.
+ * @param {number} maxMoney - The maximum money to filter by.
+ * @param {number} moneyTypeFilter - The money type to filter by (0 for Cash, 1 for Online).
+ * @returns {array} The filtered data.
+ */
+function filterData(keywordFilter, startDate, endDate, minMoney, maxMoney, moneyTypeFilter) {
+    let dataToFilter = [...globalData];  // Create a copy of global data
+
+    // Only process for others category if that filter is selected
+    if (keywordFilter === 'others') {
+        dataToFilter = processOthersCategory(dataToFilter);
+    }
+
+    const filteredData = dataToFilter.filter(item => {
+        const date = new Date(item['Date']);
+        const money = safeParseFloat(item['Money']);
+
+        // Special handling for 'others' category
+        const matchesKeyword = !keywordFilter ? true :
+            keywordFilter === 'others' ?
+                (money < 500) :
+                (item['Unique Keyword'] === keywordFilter);
+
+        return (
+            matchesKeyword &&
+            (!startDate || date >= new Date(startDate)) &&
+            (!endDate || date <= new Date(endDate)) &&
+            (!minMoney || money >= minMoney) &&
+            (!maxMoney || money <= maxMoney) &&
+            (!moneyTypeFilter || parseInt(item['Money Type'], 10) === parseInt(moneyTypeFilter, 10))
+        );
+    });
+
+    return filteredData;
+}
+
+/**
+ * Generates the dashboard based on the provided data.
+ * If no data is available for the selected filters, alerts the user and clears the dashboard.
+ * Processes the data for the "others" category if that filter is selected.
+ * Updates all charts except monthly report with the processed data.
+ * Always uses the original data for the monthly report.
+ * @param {array} data - The filtered data to generate the dashboard from.
+ */
+function generateDashboard(data) {
+    if (!data.length) {
+        alert('No data available for the selected filters.');
+        clearDashboard();
+        return;
+    }
+
+    const keywordFilter = document.getElementById('keyword-filter').value;
+    let displayData = [...data];  // Create a copy of the filtered data
+
+    // Process for others category if that filter is selected
+    if (keywordFilter === 'others') {
+        displayData = processOthersCategory(displayData);
+    }
+
+    // Update all charts except monthly report with the processed data
+    updateBalanceOverview(displayData);
+    updateIncomeExpenseTrends(displayData);
+    updateSpendingByCategory(displayData);
+    updateCashFlow(displayData);
+    updateTransactionByPlace(displayData);
+    updateDescriptionSection(displayData);
+
+    // Always use original data for monthly report
+    updateMonthlyReport(globalData);
+}
+
+/**
+ * Updates the description section of the dashboard with all the
+ * descriptions by category, with totals for each category.
+ *
+ * @param {array} data - The filtered data to generate the descriptions
+ *     from.
+ */
 function updateDescriptionSection(data) {
     const descriptionSection = document.getElementById('description-section');
     const descriptions = data.reduce((acc, item) => {
@@ -538,43 +756,26 @@ function updateDescriptionSection(data) {
         return acc;
     }, {});
 
-    let descriptionHTML = '<h3>Descriptions by Unique Keyword</h3>';
+    let descriptionHTML = '<h3>Descriptions by Category</h3>';
     for (const [keyword, items] of Object.entries(descriptions)) {
-        descriptionHTML += `<h4>${keyword}</h4><ul>`;
+        const total = items.reduce((sum, item) => sum + item.money, 0);
+        descriptionHTML += `
+            <h4>${keyword} ${keyword === 'others' ? '(Transactions < ₹500)' : ''} 
+            - Total: ₹${total.toFixed(2)}</h4>
+            <ul>`;
         items.forEach(item => {
             const getTypeClass = item.getType === "0" ? 'income' : 'expense';
             const moneyTypeClass = item.moneyType === 0 ? 'cash' : 'online';
             descriptionHTML += `<li>
                 <span class="badge ${getTypeClass}">${item.getType === "0" ? 'Income' : 'Expense'}</span>
                 <span class="badge ${moneyTypeClass}">${item.moneyType === 0 ? 'Cash' : 'Online'}</span>
-                <strong>Date:</strong> ${item.date}, <strong>Money:</strong> ${item.money}, <strong>Description:</strong> ${item.description}
+                <strong>Date:</strong> ${item.date}, 
+                <strong>Money:</strong> ₹${item.money.toFixed(2)}, 
+                <strong>Description:</strong> ${item.description}
             </li>`;
         });
         descriptionHTML += '</ul>';
     }
 
     descriptionSection.innerHTML = descriptionHTML;
-}
-
-function safeParseFloat(value) {
-    if (typeof value === 'string') {
-        return parseFloat(value.replace(/[?\s,]/g, '')) || 0;
-    }
-    return parseFloat(value) || 0;
-}
-
-function clearDashboard() {
-    const chartIds = [
-        'balance-overview',
-        'income-expense-trends',
-        'spending-by-category',
-        'cash-flow',
-        'transaction-by-place',
-    ];
-    chartIds.forEach(id => {
-        Plotly.purge(id);
-        document.getElementById(id).innerHTML = '<p class="placeholder">No data available.</p>';
-    });
-    document.getElementById('description-section').innerHTML = '<p class="placeholder">No descriptions available.</p>';
-    document.getElementById('monthly-report').style.display = 'none';
 }

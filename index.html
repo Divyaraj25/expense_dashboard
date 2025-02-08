@@ -23,6 +23,21 @@
       Drag and Drop CSV File Here or Click to Upload
     </div>
     <input type="file" id="upload" accept=".csv" style="display: none" />
+    <div class="filters" id="total-report">
+      <h3 class="filter-title" style="font-weight: lighter">Current Report</h3>
+      <hr />
+      <div style="text-align: center">
+        <div class="same-margin">
+          <label for="total-in-cash">Cash Income:</label>
+          <span id="total-in-cash"></span>
+        </div>
+        <br />
+        <div class="same-margin">
+          <label for="total-in-online">Online Income:</label>
+          <span id="total-in-online"></span>
+        </div>
+      </div>
+    </div>
     <div class="filters" id="filters">
       <label for="keyword-filter">Filter by Unique Keyword:</label>
       <select id="keyword-filter"></select>
